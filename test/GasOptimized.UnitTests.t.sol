@@ -2,10 +2,12 @@
 pragma solidity ^0.8.0; 
 
 import "forge-std/Test.sol";
-import "../src/Gas.sol";
+import "../src/GasOptimized.sol";
 
 
-contract GasTest is Test {
+
+
+contract GasTestOptimized is Test {
     GasContract public gas;
     uint256 public totalSupply = 1000000000;
     address owner = address(0x1234);
@@ -159,8 +161,6 @@ contract GasTest is Test {
 
 
 }
-
-
 
 
 
