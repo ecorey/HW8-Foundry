@@ -3,14 +3,15 @@ pragma solidity 0.8.0;
 
 import "./Ownable.sol";
 
-contract Constants {
+contract ConstantsOptimized {
     uint256 public tradeFlag = 1;
     uint256 public basicFlag = 0;
     uint256 public dividendFlag = 1;
 }
 
-contract GasContract is Ownable, Constants {
+contract GasContractOptimized is Ownable, ConstantsOptimized {
     
+    // STATE VARIABLES
     uint256 public totalSupply = 0; // cannot be updated
     uint256 public paymentCounter = 0;
     uint256 public tradePercent = 12;
@@ -21,6 +22,9 @@ contract GasContract is Ownable, Constants {
     address public contractOwner;
     address[5] public administrators;
     bool public isReady = false;
+    uint256 wasLastOdd = 1;
+    mapping(address => uint256) public isOddWhitelistUser;
+    mapping(address => ImportantStruct) public whiteListStruct;
     
     enum PaymentType {
         Unknown,
@@ -29,27 +33,32 @@ contract GasContract is Ownable, Constants {
         Dividend,
         GroupPayment
     }
+    
+
+    // CUSTOM TYPES
     PaymentType constant defaultPayment = PaymentType.Unknown;
 
     History[] public paymentHistory; // when a payment was updated
 
+    // STRUCTS
     struct Payment {
         PaymentType paymentType;
         uint256 paymentID;
-        bool adminUpdated;
+        uint256 amount;
         string recipientName; // max 8 characters
         address recipient;
         address admin; // administrators address
-        uint256 amount;
+        bool adminUpdated;
+
     }
 
     struct History {
         uint256 lastUpdate;
-        address updatedBy;
         uint256 blockNumber;
+        address updatedBy;
+
     }
-    uint256 wasLastOdd = 1;
-    mapping(address => uint256) public isOddWhitelistUser;
+    
     
     struct ImportantStruct {
         uint256 amount;
@@ -59,10 +68,10 @@ contract GasContract is Ownable, Constants {
         bool paymentStatus;
         address sender;
     }
-    mapping(address => ImportantStruct) public whiteListStruct;
+    
 
-    event AddedToWhitelist(address userAddress, uint256 tier);
-
+   
+    // MODIFIERS
     modifier onlyAdminOrOwner() {
         address senderOfTx = msg.sender;
         if (checkForAdmin(senderOfTx)) {
@@ -98,6 +107,8 @@ contract GasContract is Ownable, Constants {
         _;
     }
 
+    // EVENTS
+    event AddedToWhitelist(address userAddress, uint256 tier);
     event supplyChanged(address indexed, uint256 indexed);
     event Transfer(address recipient, uint256 amount);
     event PaymentUpdated(
@@ -108,6 +119,7 @@ contract GasContract is Ownable, Constants {
     );
     event WhiteListTransfer(address indexed);
 
+    // Constructor
     constructor(address[] memory _admins, uint256 _totalSupply) {
         contractOwner = msg.sender;
         totalSupply = _totalSupply;
@@ -129,6 +141,7 @@ contract GasContract is Ownable, Constants {
         }
     }
 
+    // FUNCTIONS
     function getPaymentHistory()
         public
         payable
@@ -323,6 +336,7 @@ contract GasContract is Ownable, Constants {
         return (whiteListStruct[sender].paymentStatus, whiteListStruct[sender].amount);
     }
 
+    // Recieve and Fallback Functions
     receive() external payable {
         payable(msg.sender).transfer(msg.value);
     }
