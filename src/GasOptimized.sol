@@ -12,17 +12,17 @@ contract ConstantsOptimized {
 contract GasContractOptimized is Ownable, ConstantsOptimized {
     
     // STATE VARIABLES
-    uint256 public totalSupply = 0; // cannot be updated
-    uint256 public paymentCounter = 0;
+    bool public isReady = false;
+    uint256 wasLastOdd = 1;
     uint256 public tradePercent = 12;
     uint256 public tradeMode = 0;
+    address public contractOwner;
+    address[5] public administrators;
+    uint256 public totalSupply = 0; // cannot be updated
+    uint256 public paymentCounter = 0;
     mapping(address => uint256) public balances;
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
-    address public contractOwner;
-    address[5] public administrators;
-    bool public isReady = false;
-    uint256 wasLastOdd = 1;
     mapping(address => uint256) public isOddWhitelistUser;
     mapping(address => ImportantStruct) public whiteListStruct;
     
@@ -89,23 +89,7 @@ contract GasContractOptimized is Ownable, ConstantsOptimized {
         }
     }
 
-    modifier checkIfWhiteListed(address sender) {
-        address senderOfTx = msg.sender;
-        require(
-            senderOfTx == sender,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the originator of the transaction was not the sender"
-        );
-        uint256 usersTier = whitelist[senderOfTx];
-        require(
-            usersTier > 0,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
-        );
-        require(
-            usersTier < 4,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3; therfore 4 is an invalid tier for the whitlist of this contract. make sure whitlist tiers were set correctly"
-        );
-        _;
-    }
+
 
     // EVENTS
     event AddedToWhitelist(address userAddress, uint256 tier);
@@ -309,27 +293,44 @@ contract GasContractOptimized is Ownable, ConstantsOptimized {
     }
 
     function whiteTransfer(
-        address _recipient,
-        uint256 _amount
-    ) public checkIfWhiteListed(msg.sender) {
-        address senderOfTx = msg.sender;
-        whiteListStruct[senderOfTx] = ImportantStruct(_amount, 0, 0, 0, true, msg.sender);
-        
-        require(
-            balances[senderOfTx] >= _amount,
-            "Gas Contract - whiteTransfers function - Sender has insufficient Balance"
-        );
-        require(
-            _amount > 3,
-            "Gas Contract - whiteTransfers function - amount to send have to be bigger than 3"
-        );
-        balances[senderOfTx] -= _amount;
-        balances[_recipient] += _amount;
-        balances[senderOfTx] += whitelist[senderOfTx];
-        balances[_recipient] -= whitelist[senderOfTx];
-        
-        emit WhiteListTransfer(_recipient);
-    }
+    address _recipient,
+    uint256 _amount
+) public {
+    address senderOfTx = msg.sender;
+
+    // The modifier logic for checkIfWhiteListed was moved into the function as was only function to use modifier
+    require(
+        senderOfTx == msg.sender,
+        "Gas Contract CheckIfWhiteListed modifier : revert happened because the originator of the transaction was not the sender"
+    );
+    uint256 usersTier = whitelist[senderOfTx];
+    require(
+        usersTier > 0,
+        "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
+    );
+    require(
+        usersTier < 4,
+        "Gas Contract CheckIfWhiteListed modifier : revert happened because the user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3; therefore 4 is an invalid tier for the whitelist of this contract. make sure whitelist tiers were set correctly"
+    );
+
+    whiteListStruct[senderOfTx] = ImportantStruct(_amount, 0, 0, 0, true, msg.sender);
+
+    require(
+        balances[senderOfTx] >= _amount,
+        "Gas Contract - whiteTransfers function - Sender has insufficient Balance"
+    );
+    require(
+        _amount > 3,
+        "Gas Contract - whiteTransfers function - amount to send have to be bigger than 3"
+    );
+    balances[senderOfTx] -= _amount;
+    balances[_recipient] += _amount;
+    balances[senderOfTx] += whitelist[senderOfTx];
+    balances[_recipient] -= whitelist[senderOfTx];
+
+    emit WhiteListTransfer(_recipient);
+}
+
 
 
     function getPaymentStatus(address sender) public returns (bool, uint256) {        

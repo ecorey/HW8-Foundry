@@ -8,7 +8,7 @@ import "../src/GasOptimized.sol";
 
 
 contract GasTestOptimized is Test {
-    GasContract public gas;
+    GasContractOptimized public gas;
     uint256 public totalSupply = 1000000000;
     address owner = address(0x1234);
     address addr1 = address(0x5678);
@@ -25,7 +25,7 @@ contract GasTestOptimized is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        gas = new GasContract(admins, totalSupply);
+        gas = new GasContractOptimized(admins, totalSupply);
         vm.stopPrank();
     }
 
